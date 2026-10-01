@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gravity Maze">
+<meta name="theme-color" content="#0b0f1a">
+<title>Gravity Maze</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="icons/icon-192.png">
+<style>
+:root{--bg:#0b0f1a;--panel:#141a2b;--accent:#38e8ff;--accent2:#ff4fd8;--gold:#ffd23f;--txt:#e9f1ff;--dim:#8a97b5;}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Rounded","Segoe UI",sans-serif;overflow:hidden;overscroll-behavior:none;touch-action:none;position:fixed;inset:0}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 14px)}
+.screen.show{display:flex}
+h1{font-size:44px;line-height:1;margin:6px 0 4px;text-align:center;font-weight:900;letter-spacing:-1px;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--dim);text-align:center;margin:0 0 18px;font-size:15px}
+.btn{appearance:none;border:0;border-radius:16px;padding:16px 22px;font-size:19px;font-weight:800;color:#06101c;background:linear-gradient(135deg,var(--accent),#7cf3ff);width:100%;max-width:340px;margin:7px 0;box-shadow:0 6px 0 #0a7d91,0 10px 24px rgba(56,232,255,.25);transition:transform .08s,box-shadow .08s}
+.btn:active,.btn.pressed{transform:translateY(5px);box-shadow:0 1px 0 #0a7d91}
+.btn.alt{background:linear-gradient(135deg,var(--accent2),#ff9ff0);box-shadow:0 6px 0 #9b2384}
+.btn.alt:active{box-shadow:0 1px 0 #9b2384}
+.btn.ghost{background:var(--panel);color:var(--txt);box-shadow:0 6px 0 #070a12}
+.btn.ghost:active{box-shadow:0 1px 0 #070a12}
+.btn.small{padding:10px 14px;font-size:15px;width:auto;margin:0}
+#homeBall{width:120px;height:120px;border-radius:50%;margin:24px auto 14px;background:radial-gradient(circle at 32% 30%,#fff 0 8%,#cfd8e6 18%,#7d8aa3 55%,#2a3245 100%);box-shadow:0 20px 40px rgba(0,0,0,.6),0 0 60px rgba(56,232,255,.25);animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translate(-30px,0) rotate(0)}50%{transform:translate(30px,-8px) rotate(200deg)}}
+.stat{color:var(--dim);font-size:14px;margin-top:12px;text-align:center}
+.topbar{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.topbar h2{margin:0;font-size:22px}
+#levelGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;width:100%;max-width:420px;overflow-y:auto;padding:4px 2px 30px;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+.tierLabel{grid-column:1/-1;font-weight:800;font-size:13px;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-top:8px}
+.lv{aspect-ratio:1;border-radius:14px;background:var(--panel);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;font-size:20px;border:2px solid #222b44;transition:transform .08s}
+.lv:active{transform:scale(.9)}
+.lv .st{font-size:10px;letter-spacing:-1px;color:var(--gold);height:12px}
+.lv.locked{opacity:.35;font-size:18px}
+.lv.done{border-color:#2fd38a}
+#game{padding:0}
+#hud{position:absolute;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top) + 6px) 12px 6px;display:flex;align-items:center;justify-content:space-between;z-index:3;pointer-events:none}
+#hud>*{pointer-events:auto}
+.pill{background:rgba(20,26,43,.85);border:1px solid #26304d;border-radius:999px;padding:8px 13px;font-weight:800;font-size:15px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.pill.btnish:active{transform:scale(.92);background:#26304d}
+#hudMid{text-align:center;line-height:1.1}
+#hudMid small{display:block;color:var(--dim);font-size:11px;font-weight:700}
+#cv{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+.modal{position:absolute;inset:0;background:rgba(5,8,15,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:10;padding:20px}
+.modal.show{display:flex}
+.card{background:var(--panel);border:1px solid #26304d;border-radius:24px;padding:22px 20px;width:100%;max-width:360px;text-align:center;box-shadow:0 30px 60px rgba(0,0,0,.5);animation:pop .35s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+.card h3{margin:0 0 6px;font-size:28px}
+.card p{color:var(--dim);margin:4px 0 12px}
+.stars{font-size:44px;letter-spacing:6px;margin:6px 0}
+.stars span{display:inline-block;opacity:.2;transform:scale(.5);transition:all .35s cubic-bezier(.2,1.8,.4,1)}
+.stars span.on{opacity:1;transform:scale(1);filter:drop-shadow(0 0 10px rgba(255,210,63,.8))}
+#toast{position:absolute;left:50%;top:22%;transform:translate(-50%,0);font-size:26px;font-weight:900;z-index:5;pointer-events:none;opacity:0;transition:opacity .25s;text-shadow:0 4px 16px #000;text-align:center;width:90%}
+#toast.show{opacity:1}
+#countdown{position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:4;pointer-events:none;flex-direction:column}
+#countdown.show{display:flex}
+#cdNum{font-size:120px;font-weight:900;color:var(--accent);text-shadow:0 0 40px rgba(56,232,255,.7);animation:pulse 1s infinite}
+#cdTip{font-weight:800;color:var(--txt);background:rgba(0,0,0,.5);padding:8px 14px;border-radius:12px}
+@keyframes pulse{0%{transform:scale(1.4);opacity:0}30%{transform:scale(1);opacity:1}100%{transform:scale(.9);opacity:.8}}
+#rotateLock{position:fixed;inset:0;background:var(--bg);z-index:999;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px}
+#rotateLock div{font-size:80px;animation:spin 2s ease-in-out infinite}
+@keyframes spin{0%,100%{transform:rotate(-90deg)}50%{transform:rotate(0)}}
+@media (orientation:landscape) and (max-height:600px){#rotateLock{display:flex}}
+.howto{text-align:left;color:var(--txt);font-size:15px;line-height:1.45;max-width:380px;overflow-y:auto;touch-action:pan-y}
+.howto b{color:var(--accent)}
+.row{display:flex;gap:10px;width:100%;max-width:340px}
+.row .btn{flex:1}
+.toggle{display:flex;justify-content:space-between;align-items:center;width:100%;max-width:340px;background:var(--panel);padding:14px 16px;border-radius:14px;margin:6px 0;font-weight:700}
+.sw{width:52px;height:30px;border-radius:15px;background:#2a3350;position:relative;transition:background .2s}
+.sw::after{content:"";position:absolute;width:26px;height:26px;border-radius:50%;background:#fff;top:2px;left:2px;transition:left .2s}
+.sw.on{background:#2fd38a}.sw.on::after{left:24px}
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<section id="home" class="screen show">
+  <div style="flex:1"></div>
+  <div id="homeBall"></div>
+  <h1>Gravity<br>Maze</h1>
+  <p class="sub">Tilt the phone to roll the ball.<br>Physics is the boss now.</p>
+  <button class="btn" id="btnPlay">▶ Play</button>
+  <button class="btn alt" id="btnLevels">🗺️ Levels</button>
+  <div class="row">
+    <button class="btn ghost" id="btnHow">❓ How</button>
+    <button class="btn ghost" id="btnSettings">⚙️ Settings</button>
+  </div>
+  <div class="stat" id="homeStat"></div>
+  <div style="flex:1"></div>
+</section>
+
+<!-- LEVEL SELECT -->
+<section id="levels" class="screen">
+  <div class="topbar"><button class="btn ghost small" data-back>← Back</button><h2>Levels</h2><span class="pill" id="starTotal">★ 0</span></div>
+  <div id="levelGrid"></div>
+</section>
+
+<!-- HOW TO -->
+<section id="how" class="screen">
+  <div class="topbar"><button class="btn ghost small" data-back>← Back</button><h2>How to Roll</h2><span style="width:60px"></span></div>
+  <div class="howto">
+    <p>📱 <b>Hold your phone flat-ish</b> like a fancy dinner tray. Tilt it and the ball rolls downhill. Newton approves.</p>
+    <p>🎯 <b>Roll into the glowing green hole</b> to win. Faster = more ★.</p>
+    <p>🕳️ <b>Red holes are traps.</b> Fall in and the ball respawns at the start, slightly embarrassed.</p>
+    <p>🎚️ <b>Recalibrate (⊕)</b> whenever you change how you're holding the phone. The angle you hold at countdown "GO" becomes "level."</p>
+    <p><b>Worlds:</b><br>
+      1–10 Rookie Roll — gentle warm-up<br>
+      11–20 Pit Panic — trap holes appear<br>
+      21–30 Loop-de-Loop — mazes with shortcuts &amp; loops<br>
+      31–40 Ice Rink — the floor is slippery. Very.<br>
+      41–50 Lights Out — you only see near the ball 🔦</p>
+    <p>🔒 <b>Tip:</b> Swipe into Control Center and turn on <b>Portrait Orientation Lock</b> so iOS doesn't spin the screen mid-tilt. The app also refuses to rotate on its own.</p>
+    <p>🖥️ No tilt sensor? Drag your finger on the screen like a joystick, or use arrow keys.</p>
+  </div>
+</section>
+
+<!-- SETTINGS -->
+<section id="settings" class="screen">
+  <div class="topbar"><button class="btn ghost small" data-back>← Back</button><h2>Settings</h2><span style="width:60px"></span></div>
+  <div class="toggle">🔊 Sound <div class="sw" id="swSound"></div></div>
+  <div class="toggle">🎚️ Auto-calibrate each level <div class="sw" id="swCal"></div></div>
+  <div class="toggle">🐢 Sensitivity <span><button class="btn ghost small" id="sensDown">−</button> <b id="sensVal">100%</b> <button class="btn ghost small" id="sensUp">+</button></span></div>
+  <div class="toggle">↔️ Invert tilt <div class="sw" id="swInv"></div></div>
+  <div style="height:20px"></div>
+  <button class="btn ghost" id="btnReset">🗑️ Reset all progress</button>
+</section>
+
+<!-- GAME -->
+<section id="game" class="screen">
+  <canvas id="cv"></canvas>
+  <div id="hud">
+    <span class="pill btnish" id="btnPause">❚❚</span>
+    <span class="pill" id="hudMid">Level 1<small>Rookie Roll</small></span>
+    <span style="display:flex;gap:6px"><span class="pill" id="hudTime">0.0s</span><span class="pill btnish" id="btnCal">⊕</span></span>
+  </div>
+  <div id="toast"></div>
+  <div id="countdown"><div id="cdNum">3</div><div id="cdTip">Hold your phone the way you'll play</div></div>
+</section>
+
+<!-- MODALS -->
+<div class="modal" id="mPerm"><div class="card">
+  <h3>🧭 Tilt Power</h3>
+  <p>Your iPhone needs permission to feel the tilt. Tap below and hit <b>Allow</b>. (It's just motion — no spying on your dance moves.)</p>
+  <button class="btn" id="btnAllow">Enable Tilt</button>
+  <button class="btn ghost" id="btnNoTilt">Use touch instead</button>
+</div></div>
+
+<div class="modal" id="mPause"><div class="card">
+  <h3>⏸️ Paused</h3><p>The ball is taking a tiny nap.</p>
+  <button class="btn" id="btnResume">Resume</button>
+  <button class="btn alt" id="btnRestart">Restart Level</button>
+  <button class="btn ghost" id="btnQuit">Level Select</button>
+</div></div>
+
+<div class="modal" id="mWin"><div class="card">
+  <h3 id="winTitle">Hole in One!</h3>
+  <div class="stars" id="winStars"><span>★</span><span>★</span><span>★</span></div>
+  <p id="winInfo"></p>
+  <button class="btn" id="btnNext">Next Level →</button>
+  <div class="row"><button class="btn ghost" id="btnRetry">↻ Retry</button><button class="btn ghost" id="btnWinLevels">🗺️ Levels</button></div>
+</div></div>
+
+<div id="rotateLock"><div>📱</div><h2>Whoa, turn me back!</h2><p style="color:#8a97b5">Gravity Maze only works in portrait.<br>Tip: turn on Portrait Orientation Lock in Control Center.</p></div>
+
+<script src="app.js"></script>
+</body>
+</html>
